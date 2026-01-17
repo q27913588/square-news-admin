@@ -8,15 +8,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.4.0",
-    "vue-router": "^4.2.0",
-    "pinia": "^2.1.0",
-    "naive-ui": "^2.38.0",
-    "vfonts": "^0.0.3",
-    "echarts": "^5.5.0",
-    "vue-echarts": "^7.0.0",
+    "@vicons/ionicons5": "^0.13.0",
     "axios": "^1.6.0",
-    "dayjs": "^1.11.0"
+    "dayjs": "^1.11.0",
+    "echarts": "^5.5.0",
+    "naive-ui": "^2.38.0",
+    "pinia": "^2.1.0",
+    "vfonts": "^0.0.3",
+    "vue": "^3.4.0",
+    "vue-echarts": "^7.0.0",
+    "vue-router": "^4.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",

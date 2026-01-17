@@ -3,40 +3,59 @@
     <div v-if="totalArticles === 0" class="empty-state">
       <n-text depth="3">數據不足 / 計算中</n-text>
     </div>
-    <div v-else class="bias-bar">
-      <div
-        class="bar-segment left-wing"
-        :style="{ width: `${(leftWingRatio || 0) * 100}%` }"
-        @mouseenter="showTooltip('left')"
-        @mouseleave="hideTooltip"
-      >
-        <span v-if="(leftWingRatio || 0) > 0.1" class="segment-label">
-          左翼 {{ ((leftWingRatio || 0) * 100).toFixed(1) }}%
-        </span>
+    <div v-else>
+      <div class="bias-bar">
+        <div
+          class="bar-segment pro-china"
+          :style="{ width: `${(leftWingRatio || 0) * 100}%` }"
+          @mouseenter="showTooltip('china')"
+          @mouseleave="hideTooltip"
+        >
+          <span v-if="(leftWingRatio || 0) > 0.1" class="segment-label">
+            親中 {{ ((leftWingRatio || 0) * 100).toFixed(1) }}%
+          </span>
+        </div>
+        <div
+          class="bar-segment neutral"
+          :style="{ width: `${(centerRatio || 0) * 100}%` }"
+          @mouseenter="showTooltip('neutral')"
+          @mouseleave="hideTooltip"
+        >
+          <span v-if="(centerRatio || 0) > 0.1" class="segment-label">
+            中立 {{ ((centerRatio || 0) * 100).toFixed(1) }}%
+          </span>
+        </div>
+        <div
+          class="bar-segment pro-us"
+          :style="{ width: `${(rightWingRatio || 0) * 100}%` }"
+          @mouseenter="showTooltip('us')"
+          @mouseleave="hideTooltip"
+        >
+          <span v-if="(rightWingRatio || 0) > 0.1" class="segment-label">
+            親美 {{ ((rightWingRatio || 0) * 100).toFixed(1) }}%
+          </span>
+        </div>
       </div>
-      <div
-        class="bar-segment center"
-        :style="{ width: `${(centerRatio || 0) * 100}%` }"
-        @mouseenter="showTooltip('center')"
-        @mouseleave="hideTooltip"
-      >
-        <span v-if="(centerRatio || 0) > 0.1" class="segment-label">
-          中立 {{ ((centerRatio || 0) * 100).toFixed(1) }}%
-        </span>
-      </div>
-      <div
-        class="bar-segment right-wing"
-        :style="{ width: `${(rightWingRatio || 0) * 100}%` }"
-        @mouseenter="showTooltip('right')"
-        @mouseleave="hideTooltip"
-      >
-        <span v-if="(rightWingRatio || 0) > 0.1" class="segment-label">
-          右翼 {{ ((rightWingRatio || 0) * 100).toFixed(1) }}%
-        </span>
+      <div class="legend-bar">
+        <div class="legend-item">
+          <span class="legend-dot pro-china-dot"></span>
+          <span class="legend-text">親中立場（負分）</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot neutral-dot"></span>
+          <span class="legend-text">中立立場（±0.3內）</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot pro-us-dot"></span>
+          <span class="legend-text">親美立場（正分）</span>
+        </div>
       </div>
     </div>
     <div v-if="totalArticles > 0" class="bar-info">
       <n-text depth="3">總文章數: {{ totalArticles }}</n-text>
+      <n-text v-if="statsArticles !== undefined && statsArticles !== null" depth="3">
+        (統計採用事實報導: {{ statsArticles }})
+      </n-text>
     </div>
   </div>
 </template>
@@ -49,13 +68,15 @@ interface Props {
   centerRatio?: number | null
   rightWingRatio?: number | null
   totalArticles: number
+  statsArticles?: number | null
 }
 
 withDefaults(defineProps<Props>(), {
   leftWingRatio: 0,
   centerRatio: 0,
   rightWingRatio: 0,
-  totalArticles: 0
+  totalArticles: 0,
+  statsArticles: null
 })
 
 function showTooltip(segment: string) {
@@ -74,53 +95,132 @@ function hideTooltip() {
 }
 
 .empty-state {
-  padding: 20px;
+  padding: 32px;
   text-align: center;
-  background-color: #f5f5f5;
-  border-radius: 4px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 12px;
+  border: 2px dashed #cbd5e1;
 }
 
 .bias-bar {
   display: flex;
   width: 100%;
-  height: 40px;
-  border-radius: 4px;
+  height: 56px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+.bias-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  padding: 2px;
+  background: linear-gradient(90deg, #ef4444, #9ca3af, #3b82f6);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.5;
 }
 
 .bar-segment {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  position: relative;
 }
 
 .bar-segment:hover {
-  opacity: 0.8;
+  filter: brightness(1.15);
+  transform: scaleY(1.05);
 }
 
-.left-wing {
-  background-color: #ff4d4f;
+.bar-segment::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(0, 0, 0, 0.1) 100%);
 }
 
-.center {
-  background-color: #8c8c8c;
+.pro-china {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
 }
 
-.right-wing {
-  background-color: #1890ff;
+.neutral {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+
+.pro-us {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+/* 圖例樣式 */
+.legend-bar {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 16px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pro-china-dot {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.neutral-dot {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+
+.pro-us-dot {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.legend-text {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .segment-label {
   color: white;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  position: relative;
 }
 
 .bar-info {
-  margin-top: 8px;
+  margin-top: 12px;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.bar-info::before {
+  content: '📊';
+  font-size: 16px;
 }
 </style>

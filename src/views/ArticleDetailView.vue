@@ -55,7 +55,10 @@
                 {{ article.topic || '-' }}
               </n-descriptions-item>
               <n-descriptions-item label="新聞類型">
-                {{ article.newsType || '-' }}
+                <n-tag v-if="article.newsType" :type="getNewsTypeTag(article.newsType)" size="small">
+                  {{ getNewsTypeText(article.newsType) }}
+                </n-tag>
+                <span v-else>-</span>
               </n-descriptions-item>
               <n-descriptions-item label="立場分數" :span="2">
                 <span v-if="article.stanceScore !== null && article.stanceScore !== undefined"
@@ -147,6 +150,27 @@ function getStatusType(status: string): any {
     ERROR: 'error'
   }
   return map[status] || 'default'
+}
+
+function getNewsTypeTag(type: string): any {
+  const map: Record<string, string> = {
+    FACTUAL: 'success',
+    REPOST: 'warning',
+    COMMENTARY: 'info',
+    NARRATIVE: 'error'
+  }
+  return map[type] || 'default'
+}
+
+function getNewsTypeText(type: string): string {
+  const map: Record<string, string> = {
+    FACTUAL: '事實報導',
+    REPOST: '轉述引述',
+    COMMENTARY: '網紅評論',
+    NARRATIVE: '帶風向',
+    UNKNOWN: '未知'
+  }
+  return map[type] || type
 }
 
 function getStanceColor(score: number): string {

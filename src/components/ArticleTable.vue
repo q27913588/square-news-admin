@@ -49,6 +49,22 @@ const columns: DataTableColumns<Article> = [
     }
   },
   {
+    title: '類型',
+    key: 'newsType',
+    width: 120,
+    render: (row) => {
+      const typeMap: Record<string, any> = {
+        FACTUAL: { type: 'success', text: '事實報導' },
+        REPOST: { type: 'warning', text: '轉述引述' },
+        COMMENTARY: { type: 'info', text: '網紅評論' },
+        NARRATIVE: { type: 'error', text: '帶風向' },
+        UNKNOWN: { type: 'default', text: '未知' }
+      }
+      const type = typeMap[row.newsType || 'UNKNOWN'] || { type: 'default', text: row.newsType || '-' }
+      return h(NTag, { type: type.type, size: 'small', bordered: false }, { default: () => type.text })
+    }
+  },
+  {
     title: '發布時間',
     key: 'publishedAt',
     width: 180,

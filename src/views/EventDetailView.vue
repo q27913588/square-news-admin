@@ -53,12 +53,18 @@
               :center-ratio="spectrum.centerRatio"
               :right-wing-ratio="spectrum.rightWingRatio"
               :total-articles="spectrum.totalArticles"
+              :stats-articles="spectrum.statsArticles"
             />
           </n-card>
 
           <!-- Source Distribution -->
           <n-card v-if="spectrum.sourceDetails && spectrum.sourceDetails.length > 0" title="來源分佈">
             <SourceDistribution :source-details="spectrum.sourceDetails" />
+          </n-card>
+
+          <!-- News Type Analysis -->
+          <n-card v-if="spectrum.sourceDetails && spectrum.sourceDetails.length > 0" title="媒體「廢文」分析 (轉述/評論/風向)">
+            <NewsTypeAnalysis :source-details="spectrum.sourceDetails" />
           </n-card>
 
           <!-- Articles -->
@@ -89,6 +95,7 @@ import type { Event, SpectrumDTO } from '@/types'
 import { formatDisplay } from '@/utils/date'
 import BiasBar from '@/components/BiasBar.vue'
 import SourceDistribution from '@/components/SourceDistribution.vue'
+import NewsTypeAnalysis from '@/components/NewsTypeAnalysis.vue'
 import ArticleTable from '@/components/ArticleTable.vue'
 
 interface Props {

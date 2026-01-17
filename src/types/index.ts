@@ -57,6 +57,7 @@ export interface SpectrumSourceStance {
   sourceName: string
   averageScore: number
   articleCount: number
+  newsTypeCounts?: Record<string, number>
 }
 
 export interface SpectrumDTO {
@@ -64,11 +65,13 @@ export interface SpectrumDTO {
   topic: string
   averageScore?: number | null
   totalArticles: number
+  statsArticles?: number | null
   totalSources?: number | null
   leftWingRatio?: number | null
   centerRatio?: number | null
   rightWingRatio?: number | null
   sourceDetails?: SpectrumSourceStance[]
+  newsTypeStats?: Record<string, number>
   articles?: Article[]
 }
 

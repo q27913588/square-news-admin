@@ -4,7 +4,12 @@
       "Bash(npm create:*)",
       "Bash(npm install)",
       "Bash(npm run dev:*)",
-      "Bash(timeout /t 3)"
+      "Bash(timeout /t 3)",
+      "Bash(npm install:*)",
+      "Bash(ping:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }
