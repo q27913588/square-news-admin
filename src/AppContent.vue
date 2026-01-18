@@ -49,7 +49,7 @@
       </div>
     </n-layout-header>
 
-    <n-layout-content class="app-content">
+    <n-layout-content class="app-content" :native-scrollbar="false" :content-style="{ padding: route.path.startsWith('/admin') ? '0' : '32px 24px' }">
       <transition name="fade" mode="out-in">
         <router-view />
       </transition>
@@ -187,7 +187,6 @@ function handleDropdownSelect(key: string) {
 }
 
 .app-content {
-  padding: 32px 24px;
   background-color: #f8fafc;
   min-height: calc(100vh - 72px);
 }

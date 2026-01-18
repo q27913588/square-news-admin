@@ -116,6 +116,8 @@ npm run build
 npm run preview
 ```
 
+npx wrangler pages deploy dist --project-name square-news-admin
+
 ## API 連接
 
 ### 後端要求

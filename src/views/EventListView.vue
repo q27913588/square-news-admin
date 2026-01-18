@@ -23,8 +23,9 @@
 
         <!-- Events Table -->
         <n-data-table
+          remote
           :columns="columns"
-          :data="filteredEvents"
+          :data="events"
           :loading="loading"
           :pagination="pagination"
           :row-props="rowProps"
@@ -35,11 +36,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, onMounted, h, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { NH1, NCard, NSpace, NInput, NSelect, NDataTable, NTag, NText, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
-import { getTrendingEvents } from '@/api/events'
+import { getEvents } from '@/api/events'
 import type { Event } from '@/types'
 import { formatDisplay } from '@/utils/date'
 
@@ -56,9 +57,22 @@ const stateOptions = [
   { label: '已關閉', value: 'CLOSED' }
 ]
 
-const pagination = {
-  pageSize: 20
-}
+const pagination = ref({
+  page: 1,
+  pageSize: 20,
+  itemCount: 0,
+  showSizePicker: true,
+  pageSizes: [10, 20, 50, 100],
+  onChange: (page: number) => {
+    pagination.value.page = page
+    loadEvents()
+  },
+  onUpdatePageSize: (pageSize: number) => {
+    pagination.value.pageSize = pageSize
+    pagination.value.page = 1
+    loadEvents()
+  }
+})
 
 const columns: DataTableColumns<Event> = [
   {
@@ -111,26 +125,13 @@ const columns: DataTableColumns<Event> = [
     title: '更新時間',
     key: 'updatedAt',
     width: 180,
+    defaultSortOrder: 'descend',
+    sorter: 'default',
     render: (row) => {
       return h(NText, { depth: 3 }, { default: () => formatDisplay(row.updatedAt) })
     }
   }
 ]
-
-const filteredEvents = computed(() => {
-  let result = events.value
-
-  if (searchTopic.value) {
-    const query = searchTopic.value.toLowerCase()
-    result = result.filter((event) => event.topic.toLowerCase().includes(query))
-  }
-
-  if (filterState.value) {
-    result = result.filter((event) => event.state === filterState.value)
-  }
-
-  return result
-})
 
 function rowProps(row: Event) {
   return {
@@ -141,10 +142,22 @@ function rowProps(row: Event) {
   }
 }
 
+watch([searchTopic, filterState], () => {
+  pagination.value.page = 1
+  loadEvents()
+})
+
 async function loadEvents() {
   try {
     loading.value = true
-    events.value = await getTrendingEvents(50)
+    const data = await getEvents(
+      pagination.value.page - 1,
+      pagination.value.pageSize,
+      searchTopic.value || undefined,
+      filterState.value || undefined
+    )
+    events.value = data.content
+    pagination.value.itemCount = data.totalElements
   } catch (error: any) {
     message.error(error.message || '載入事件列表失敗')
   } finally {

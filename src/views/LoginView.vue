@@ -53,7 +53,15 @@ async function handleLogin() {
     await formRef.value?.validate()
     loading.value = true
 
-    authStore.login(formData.apiKey)
+    // 自動去除前後空格，避免使用者不小心複製到空格
+    const cleanKey = formData.apiKey.trim()
+    
+    if (!cleanKey) {
+      message.error('請輸入有效的 API Key')
+      return
+    }
+
+    authStore.login(cleanKey)
     message.success('登入成功')
 
     const redirect = route.query.redirect as string

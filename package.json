@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name square-news-admin"
   },
   "dependencies": {
     "@vicons/ionicons5": "^0.13.0",
@@ -21,8 +22,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
-    "typescript": "^5.3.0",
+    "typescript": "^5.4.5",
     "vite": "^5.0.0",
-    "vue-tsc": "^1.8.0"
+    "vue-tsc": "^2.1.6"
   }
 }

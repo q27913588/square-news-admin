@@ -15,6 +15,33 @@ export interface Event {
   stanceDiversity?: number
   updatedAt?: string
   createdAt?: string
+  keyPoints?: string[]
+  blindspotLabel?: string
+  locationTag?: string
+}
+
+export interface EventCreateRequest {
+  topic: string
+  coreSummary?: string | null
+  actors?: Record<string, unknown> | null
+  startTime?: string | null // ISO format: YYYY-MM-DDTHH:mm:ss
+  endTime?: string | null
+  state?: EventState | null
+  articleIds?: number[] | null
+  keyPoints?: string[] | null
+  blindspotLabel?: string | null
+  locationTag?: string | null
+}
+
+export interface EventSuggestRequest {
+  articleIds: number[]
+}
+
+export interface EventSuggestResponse {
+  topic: string
+  coreSummary: string
+  actors: string[]
+  keyPoints?: string[]
 }
 
 // Article Types
@@ -29,6 +56,8 @@ export interface MediaSource {
   weight?: number
   createdAt?: string
   updatedAt?: string
+  factuality?: 'HIGH' | 'MIXED' | 'LOW' | 'UNKNOWN' | string
+  ownershipInfo?: string
 }
 
 export interface Article {
@@ -58,6 +87,8 @@ export interface SpectrumSourceStance {
   averageScore: number
   articleCount: number
   newsTypeCounts?: Record<string, number>
+  factuality?: 'HIGH' | 'MIXED' | 'LOW' | 'UNKNOWN' | string
+  ownershipInfo?: string
 }
 
 export interface SpectrumDTO {
@@ -70,9 +101,14 @@ export interface SpectrumDTO {
   leftWingRatio?: number | null
   centerRatio?: number | null
   rightWingRatio?: number | null
+  proChinaRatio?: number | null
+  proUsRatio?: number | null
   sourceDetails?: SpectrumSourceStance[]
   newsTypeStats?: Record<string, number>
   articles?: Article[]
+  blindspotLabel?: string
+  keyPoints?: string[]
+  locationTag?: string
 }
 
 // Pagination Type

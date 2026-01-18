@@ -1,6 +1,13 @@
 <template>
-  <n-layout has-sider>
-    <n-layout-sider bordered show-trigger collapse-mode="width" :collapsed-width="64" :width="240">
+  <n-layout has-sider class="admin-layout">
+    <n-layout-sider
+      bordered
+      show-trigger
+      collapse-mode="width"
+      :collapsed-width="64"
+      :width="240"
+      class="admin-sider"
+    >
       <n-menu
         v-model:value="activeKey"
         :collapsed-width="64"
@@ -8,19 +15,20 @@
         @update:value="handleMenuSelect"
       />
     </n-layout-sider>
-    <n-layout-content style="padding: 24px">
-      <router-view />
+    <n-layout-content class="admin-content" :native-scrollbar="false">
+      <div class="admin-view-container">
+        <router-view />
+      </div>
     </n-layout-content>
   </n-layout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h } from 'vue'
+import { computed, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { NLayout, NLayoutSider, NLayoutContent, NMenu, NIcon } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
 import {
-  DatabaseOutline as DatabaseIcon,
   GitMergeOutline as MergeIcon,
   SettingsOutline as SettingsIcon
 } from '@vicons/ionicons5'
@@ -28,7 +36,8 @@ import {
 const router = useRouter()
 const route = useRoute()
 
-const activeKey = ref(route.name as string)
+// 使用 computed 讓 activeKey 隨路由自動更新
+const activeKey = computed(() => route.name as string)
 
 function renderIcon(icon: any) {
   return () => h(NIcon, null, { default: () => h(icon) })
@@ -38,7 +47,7 @@ const menuOptions: MenuOption[] = [
   {
     label: '媒體字典管理',
     key: 'AdminMediaSources',
-    icon: renderIcon(DatabaseIcon)
+    icon: renderIcon(SettingsIcon)
   },
   {
     label: '實體別名管理',
@@ -56,3 +65,23 @@ function handleMenuSelect(key: string) {
   router.push({ name: key })
 }
 </script>
+
+<style scoped>
+.admin-layout {
+  min-height: calc(100vh - 72px);
+  background-color: transparent;
+}
+
+.admin-sider {
+  background-color: white;
+  box-shadow: 2px 0 8px 0 rgb(29 33 41 / 4%);
+}
+
+.admin-content {
+  background-color: #f8fafc;
+}
+
+.admin-view-container {
+  padding: 24px;
+}
+</style>
