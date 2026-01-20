@@ -1,5 +1,5 @@
 import { publicApi, adminApi } from './client'
-import type { Event, SpectrumDTO, EventCreateRequest, EventSuggestRequest, EventSuggestResponse, Page } from '@/types'
+import type { Event, Article, SpectrumDTO, IncitementSpectrumDTO, EventCreateRequest, EventSuggestRequest, EventSuggestResponse, Page } from '@/types'
 
 /**
  * Get all events
@@ -50,11 +50,31 @@ export async function getEventById(eventId: number): Promise<Event> {
 }
 
 /**
- * Get event spectrum (bias bar data)
+ * Get articles for a specific event
+ * @param eventId Event ID
+ */
+export async function getEventArticles(eventId: number): Promise<Article[]> {
+  const response = await publicApi.get<Article[]>(`/events/${eventId}/articles`)
+  return response.data
+}
+
+/**
+ * Get event spectrum (bias bar data) - DEPRECATED
+ * @deprecated Use getEventIncitementSpectrum from incitement.ts for new incitement-based spectrum
  * @param eventId Event ID
  */
 export async function getEventSpectrum(eventId: number): Promise<SpectrumDTO> {
   const response = await publicApi.get<SpectrumDTO>(`/events/${eventId}/spectrum`)
+  return response.data
+}
+
+/**
+ * Get event incitement spectrum (2D scatter plot data)
+ * 获取事件煽动指数光谱（2D 图表数据）
+ * @param eventId Event ID
+ */
+export async function getEventIncitementSpectrum(eventId: number): Promise<IncitementSpectrumDTO> {
+  const response = await publicApi.get<IncitementSpectrumDTO>(`/events/${eventId}/spectrum`)
   return response.data
 }
 

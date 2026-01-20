@@ -28,6 +28,12 @@ const routes: RouteRecordRaw[] = [
     props: true
   },
   {
+    path: '/events/:eventId/incitement',
+    name: 'EventIncitement',
+    component: () => import('@/views/EventIncitementView.vue'),
+    props: true
+  },
+  {
     path: '/articles',
     name: 'ArticleList',
     component: () => import('@/views/ArticleListView.vue')

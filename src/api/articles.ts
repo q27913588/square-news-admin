@@ -1,5 +1,5 @@
 import { publicApi } from './client'
-import type { Article, Page, GetArticlesParams } from '@/types'
+import type { Article, Page, GetArticlesParams, ArticleIncitationAnalysis, ArticleIncitationEvidence } from '@/types'
 
 /**
  * Get articles with pagination and filters
@@ -36,5 +36,37 @@ export async function searchArticles(q: string, limit: number = 10): Promise<Art
   const response = await publicApi.get<Article[]>('/articles/search', {
     params: { q, limit }
   })
+  return response.data
+}
+
+/**
+ * Get article incitation analysis
+ * @param articleId Article ID
+ * @returns ArticleIncitationAnalysis or null if not available
+ */
+export async function getArticleIncitationAnalysis(
+  articleId: number
+): Promise<ArticleIncitationAnalysis | null> {
+  try {
+    const response = await publicApi.get<ArticleIncitationAnalysis>(`/articles/${articleId}/incitation`)
+    return response.data
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      // 文章沒有煽動指數分析（可能是低價值新聞或未分配事件）
+      return null
+    }
+    throw error
+  }
+}
+
+/**
+ * Get article incitation evidence
+ * @param articleId Article ID
+ * @returns Array of evidence snippets
+ */
+export async function getArticleIncitationEvidence(
+  articleId: number
+): Promise<ArticleIncitationEvidence[]> {
+  const response = await publicApi.get<ArticleIncitationEvidence[]>(`/articles/${articleId}/incitation/evidence`)
   return response.data
 }

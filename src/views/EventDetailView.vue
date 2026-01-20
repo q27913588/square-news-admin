@@ -1,23 +1,20 @@
 <template>
   <div class="event-detail-container">
     <n-space vertical size="large">
-      <!-- Back Button -->
-      <n-button @click="router.back()">← 返回</n-button>
+      <!-- Navigation Buttons -->
+      <n-space>
+        <n-button @click="router.back()">← 返回</n-button>
+        <n-button 
+          type="primary" 
+          @click="router.push(`/events/${eventId}/incitement`)"
+        >
+          📊 查看煽動指數分析
+        </n-button>
+      </n-space>
 
       <!-- Loading -->
       <n-spin :show="loading">
-        <div v-if="event && spectrum">
-          
-          <!-- Blindspot Alert -->
-          <n-alert 
-            v-if="spectrum.blindspotLabel && spectrum.blindspotLabel !== 'BALANCED'" 
-            type="warning" 
-            show-icon 
-            style="margin-bottom: 16px"
-          >
-            {{ getBlindspotText(spectrum.blindspotLabel) }}
-          </n-alert>
-
+        <div v-if="event">
           <!-- Event Info -->
           <n-card :title="event.topic">
             <template #header-extra>
@@ -39,17 +36,14 @@
               <n-descriptions-item label="熱度">
                 {{ event.hotness?.toFixed(2) || '-' }}
               </n-descriptions-item>
-              <n-descriptions-item label="地點" v-if="spectrum.locationTag">
-                 <n-tag type="info" size="small">{{ spectrum.locationTag }}</n-tag>
-              </n-descriptions-item>
-              <n-descriptions-item label="更新時間">
+              <n-descriptions-item label="更新時間" :span="2">
                 {{ formatDisplay(event.updatedAt) }}
               </n-descriptions-item>
               
               <!-- Key Points -->
               <n-descriptions-item label="重點摘要" :span="2">
-                <ul v-if="spectrum.keyPoints && spectrum.keyPoints.length > 0" style="padding-left: 20px; margin: 0;">
-                  <li v-for="(point, index) in spectrum.keyPoints" :key="index">{{ point }}</li>
+                <ul v-if="event.keyPoints && event.keyPoints.length > 0" style="padding-left: 20px; margin: 0;">
+                  <li v-for="(point, index) in event.keyPoints" :key="index">{{ point }}</li>
                 </ul>
                 <span v-else>{{ event.coreSummary || '-' }}</span>
               </n-descriptions-item>
@@ -60,63 +54,34 @@
             </n-descriptions>
           </n-card>
 
-          <!-- Bias Bar -->
-          <n-card title="立場光譜">
-            <BiasBar
-              :left-wing-ratio="spectrum.proChinaRatio ?? spectrum.leftWingRatio"
-              :center-ratio="spectrum.centerRatio"
-              :right-wing-ratio="spectrum.proUsRatio ?? spectrum.rightWingRatio"
-              :total-articles="spectrum.totalArticles"
-              :stats-articles="spectrum.statsArticles"
-            />
+          <!-- Incitement Analysis (if available) -->
+          <n-card v-if="incitementData" title="煽動指數分析">
+            <n-space vertical>
+              <n-text v-if="incitementData.stanceTarget">
+                立場目標：{{ incitementData.stanceTarget }}
+              </n-text>
+              <n-text v-if="incitementData.statistics">
+                平均煽動指數：{{ incitementData.statistics.averageIncitement?.toFixed(1) || '-' }}
+              </n-text>
+              <n-button type="primary" @click="router.push(`/events/${event.eventId}/incitement`)">
+                查看詳細煽動指數分析
+              </n-button>
+            </n-space>
           </n-card>
 
-          <!-- Media Source Cards (Ground News Style) -->
-          <n-card v-if="spectrum.sourceDetails && spectrum.sourceDetails.length > 0" title="媒體來源列表">
-            <n-grid :x-gap="12" :y-gap="12" cols="1 s:2 m:3 l:4" responsive="screen">
-              <n-grid-item v-for="source in spectrum.sourceDetails" :key="source.sourceName">
-                <n-card size="small" bordered>
-                  <template #header>
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
-                      <span>{{ source.sourceName }}</span>
-                      <n-tag :type="getFactualityColor(source.factuality)" size="small" round>
-                        {{ getFactualityText(source.factuality) }}
-                      </n-tag>
-                    </div>
-                  </template>
-                  <n-space vertical size="small">
-                    <div v-if="source.ownershipInfo">
-                      <n-text depth="3" size="small">所有權: {{ source.ownershipInfo }}</n-text>
-                    </div>
-                    <div>
-                      <n-text depth="3">文章數: </n-text>
-                      <n-text strong>{{ source.articleCount }}</n-text>
-                    </div>
-                    <div>
-                      <n-text depth="3">平均立場: </n-text>
-                      <n-text :style="{ color: getScoreColor(source.averageScore) }">
-                        {{ source.averageScore.toFixed(2) }}
-                      </n-text>
-                    </div>
-                  </n-space>
-                </n-card>
-              </n-grid-item>
-            </n-grid>
-          </n-card>
-
-          <!-- Source Distribution Chart -->
-          <n-card v-if="spectrum.sourceDetails && spectrum.sourceDetails.length > 0" title="來源分佈圖表">
-            <SourceDistribution :source-details="spectrum.sourceDetails" />
-          </n-card>
-
-          <!-- News Type Analysis -->
-          <n-card v-if="spectrum.sourceDetails && spectrum.sourceDetails.length > 0" title="媒體「廢文」分析 (轉述/評論/風向)">
-            <NewsTypeAnalysis :source-details="spectrum.sourceDetails" />
-          </n-card>
+          <!-- No Incitement Data Alert -->
+          <n-alert v-else type="info" title="煽動指數數據">
+            此事件尚未進行煽動指數分析。
+            <template #footer>
+              <n-text depth="3">
+                您可以點擊「查看煽動指數分析」按鈕手動觸發分析。
+              </n-text>
+            </template>
+          </n-alert>
 
           <!-- Articles -->
           <n-card title="相關文章">
-            <ArticleTable :articles="spectrum.articles || []" :loading="false" />
+            <ArticleTable :articles="articles" :loading="false" />
           </n-card>
         </div>
       </n-spin>
@@ -141,12 +106,11 @@ import {
   NText,
   useMessage
 } from 'naive-ui'
-import { getEventById, getEventSpectrum } from '@/api/events'
-import type { Event, SpectrumDTO } from '@/types'
+import { getEventById, getEventArticles } from '@/api/events'
+import { getEventIncitement } from '@/api/incitement'
+import type { Event, Article } from '@/types'
+import type { EventIncitementData } from '@/api/incitement'
 import { formatDisplay } from '@/utils/date'
-import BiasBar from '@/components/BiasBar.vue'
-import SourceDistribution from '@/components/SourceDistribution.vue'
-import NewsTypeAnalysis from '@/components/NewsTypeAnalysis.vue'
 import ArticleTable from '@/components/ArticleTable.vue'
 
 interface Props {
@@ -158,7 +122,8 @@ const router = useRouter()
 const message = useMessage()
 
 const event = ref<Event | null>(null)
-const spectrum = ref<SpectrumDTO | null>(null)
+const incitementData = ref<EventIncitementData | null>(null)
+const articles = ref<Article[]>([])
 const loading = ref(false)
 
 async function loadEventDetail() {
@@ -166,54 +131,26 @@ async function loadEventDetail() {
     loading.value = true
     const eventIdNum = parseInt(props.eventId)
 
-    const [eventData, spectrumData] = await Promise.all([
+    const [eventData, articlesData] = await Promise.all([
       getEventById(eventIdNum),
-      getEventSpectrum(eventIdNum)
+      getEventArticles(eventIdNum)
     ])
 
     event.value = eventData
-    spectrum.value = spectrumData
+    articles.value = articlesData
+
+    // 尝试加载煽动指数数据（可能不存在）
+    try {
+      incitementData.value = await getEventIncitement(eventIdNum, false)
+    } catch (err) {
+      console.warn('No incitement data available for this event')
+      incitementData.value = null
+    }
   } catch (error: any) {
     message.error(error.message || '載入事件詳情失敗')
   } finally {
     loading.value = false
   }
-}
-
-function getBlindspotText(label?: string): string {
-  switch (label) {
-    case 'PRO_US_BLINDSPOT': return '⚠️ 親美盲區：親美媒體對此事件報導較少，建議參考親中觀點。'
-    case 'PRO_CHINA_BLINDSPOT': return '⚠️ 親中盲區：親中媒體對此事件報導較少，建議參考親美觀點。'
-    case 'LEFT_BLINDSPOT': return '⚠️ 左翼盲區：左翼媒體報導較少。'
-    case 'RIGHT_BLINDSPOT': return '⚠️ 右翼盲區：右翼媒體報導較少。'
-    case 'BALANCED': return '平衡報導'
-    default: return label || ''
-  }
-}
-
-function getFactualityColor(factuality?: string): 'success' | 'warning' | 'error' | 'default' {
-  switch (factuality) {
-    case 'HIGH': return 'success'
-    case 'MIXED': return 'warning'
-    case 'LOW': return 'error'
-    default: return 'default'
-  }
-}
-
-function getFactualityText(factuality?: string): string {
-  switch (factuality) {
-    case 'HIGH': return '高可信度'
-    case 'MIXED': return '混合'
-    case 'LOW': return '低可信度'
-    case 'UNKNOWN': return '未知'
-    default: return factuality || '未知'
-  }
-}
-
-function getScoreColor(score: number): string {
-  if (score < -0.3) return '#ef4444' // Red (Pro-China)
-  if (score > 0.3) return '#3b82f6' // Blue (Pro-US)
-  return '#9ca3af' // Grey
 }
 
 onMounted(() => {

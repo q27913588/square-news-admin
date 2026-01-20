@@ -60,13 +60,6 @@
                 </n-tag>
                 <span v-else>-</span>
               </n-descriptions-item>
-              <n-descriptions-item label="立場分數" :span="2">
-                <span v-if="article.stanceScore !== null && article.stanceScore !== undefined"
-                      :style="{ color: getStanceColor(article.stanceScore), fontWeight: '600', fontSize: '16px' }">
-                  {{ article.stanceScore.toFixed(2) }}
-                </span>
-                <span v-else>-</span>
-              </n-descriptions-item>
               <n-descriptions-item label="事件 ID" :span="2">
                 <n-button
                   v-if="article.eventId"
@@ -84,10 +77,96 @@
               <n-descriptions-item v-if="article.actors" label="參與者" :span="2">
                 <pre>{{ JSON.stringify(article.actors, null, 2) }}</pre>
               </n-descriptions-item>
-              <n-descriptions-item v-if="article.stanceResult" label="立場詳情" :span="2">
-                <pre>{{ JSON.stringify(article.stanceResult, null, 2) }}</pre>
-              </n-descriptions-item>
             </n-descriptions>
+          </n-card>
+
+          <!-- Incitation Analysis -->
+          <n-card v-if="incitationAnalysis" title="煽動指數分析">
+            <n-space vertical size="large">
+              <!-- Overall Score -->
+              <n-descriptions :column="2" bordered>
+                <n-descriptions-item label="煽動指數">
+                  <span :style="{ 
+                    color: getIncitementColor(incitationAnalysis.incitementScore), 
+                    fontWeight: '600', 
+                    fontSize: '18px' 
+                  }">
+                    {{ incitationAnalysis.incitementScore.toFixed(1) }}
+                  </span>
+                  <n-tag 
+                    :type="incitationAnalysis.incitementScore > 70 ? 'error' : incitationAnalysis.incitementScore > 40 ? 'warning' : 'success'" 
+                    size="small" 
+                    style="margin-left: 8px"
+                  >
+                    {{ getIncitementLevel(incitationAnalysis.incitementScore) }}
+                  </n-tag>
+                </n-descriptions-item>
+                <n-descriptions-item label="分析信心度">
+                  {{ incitationAnalysis.confidence ? (incitationAnalysis.confidence * 100).toFixed(1) + '%' : '-' }}
+                </n-descriptions-item>
+              </n-descriptions>
+
+              <!-- Stance Analysis -->
+              <n-descriptions v-if="incitationAnalysis.stancePolarity !== null && incitationAnalysis.stancePolarity !== undefined" :column="2" bordered>
+                <n-descriptions-item label="立場傾向">
+                  <span :style="{ 
+                    color: getStanceColor(incitationAnalysis.stancePolarity), 
+                    fontWeight: '600', 
+                    fontSize: '16px' 
+                  }">
+                    {{ getStanceLabel(incitationAnalysis.stancePolarity) }}
+                  </span>
+                  <span style="margin-left: 8px; color: #8c8c8c;">
+                    ({{ incitationAnalysis.stancePolarity.toFixed(2) }})
+                  </span>
+                </n-descriptions-item>
+                <n-descriptions-item label="立場目標">
+                  {{ incitationAnalysis.stanceTarget || '-' }}
+                </n-descriptions-item>
+                <n-descriptions-item label="立場信心度" :span="2">
+                  {{ incitationAnalysis.stanceConfidence ? (incitationAnalysis.stanceConfidence * 100).toFixed(1) + '%' : '-' }}
+                </n-descriptions-item>
+              </n-descriptions>
+
+              <!-- 7 Dimensions -->
+              <div>
+                <h3 style="margin-bottom: 16px;">詳細維度分析</h3>
+                <n-space vertical>
+                  <div v-for="dim in dimensions" :key="dim.key" style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                      <span style="font-weight: 500;">{{ dim.label }}</span>
+                      <span style="font-weight: 600; color: #1890ff;">{{ getDimValue(dim.key) }}/5</span>
+                    </div>
+                    <n-progress 
+                      :percentage="(getDimValue(dim.key) / 5) * 100" 
+                      :color="getDimValue(dim.key) > 3 ? '#ff4d4f' : getDimValue(dim.key) > 2 ? '#faad14' : '#52c41a'"
+                      :show-indicator="false"
+                    />
+                  </div>
+                </n-space>
+              </div>
+
+              <!-- Metadata -->
+              <n-descriptions :column="2" bordered>
+                <n-descriptions-item label="分析時間">
+                  {{ formatDisplay(incitationAnalysis.computedAt) }}
+                </n-descriptions-item>
+                <n-descriptions-item label="模型版本">
+                  {{ incitationAnalysis.version }}
+                </n-descriptions-item>
+              </n-descriptions>
+            </n-space>
+          </n-card>
+
+          <!-- No Analysis Message -->
+          <n-card v-else title="煽動指數分析">
+            <n-empty description="此文章暫無煽動指數分析">
+              <template #extra>
+                <n-text depth="3" style="font-size: 12px;">
+                  可能是低價值新聞（娛樂、體育等）或尚未分配事件
+                </n-text>
+              </template>
+            </n-empty>
           </n-card>
 
           <!-- Metadata -->
@@ -124,10 +203,12 @@ import {
   NA,
   NEmpty,
   NCollapseTransition,
+  NProgress,
+  NText,
   useMessage
 } from 'naive-ui'
-import { getArticleById } from '@/api/articles'
-import type { Article } from '@/types'
+import { getArticleById, getArticleIncitationAnalysis } from '@/api/articles'
+import type { Article, ArticleIncitationAnalysis } from '@/types'
 import { formatDisplay } from '@/utils/date'
 
 interface Props {
@@ -139,8 +220,20 @@ const router = useRouter()
 const message = useMessage()
 
 const article = ref<Article | null>(null)
+const incitationAnalysis = ref<ArticleIncitationAnalysis | null>(null)
 const loading = ref(false)
 const showFullText = ref(false)
+
+// 7 個維度的定義
+const dimensions = [
+  { key: 'dimA', label: 'A. 陣營化/二分對立' },
+  { key: 'dimB', label: 'B. 道德譴責與妖魔化' },
+  { key: 'dimC', label: 'C. 威脅放大' },
+  { key: 'dimD', label: 'D. 歸因與替罪羊' },
+  { key: 'dimE', label: 'E. 行動號召/懲罰正當化' },
+  { key: 'dimF', label: 'F. 未證實指控與陰謀化' },
+  { key: 'dimG', label: 'G. 武斷確定性' }
+]
 
 function getStatusType(status: string): any {
   const map: Record<string, string> = {
@@ -173,10 +266,36 @@ function getNewsTypeText(type: string): string {
   return map[type] || type
 }
 
-function getStanceColor(score: number): string {
-  if (score < -0.3) return '#ff4d4f'
-  if (score > 0.3) return '#1890ff'
-  return '#8c8c8c'
+function getStanceColor(polarity: number): string {
+  if (polarity > 0.3) return '#1890ff'   // 藍色（親美/抗中）
+  if (polarity < -0.3) return '#ff4d4f'  // 紅色（親中/疑美）
+  return '#52c41a'                       // 綠色（中立）
+}
+
+function getStanceLabel(polarity: number): string {
+  if (polarity > 0.5) return '親美/抗中'
+  if (polarity > 0.2) return '偏向親美'
+  if (polarity < -0.5) return '親中/疑美'
+  if (polarity < -0.2) return '偏向親中'
+  return '中立'
+}
+
+function getIncitementColor(score: number): string {
+  if (score > 70) return '#ff4d4f'   // 紅色（高煽動）
+  if (score > 40) return '#faad14'   // 橙色（中等）
+  return '#52c41a'                   // 綠色（低煽動）
+}
+
+function getIncitementLevel(score: number): string {
+  if (score > 70) return '高'
+  if (score > 40) return '中'
+  return '低'
+}
+
+function getDimValue(key: string): number {
+  if (!incitationAnalysis.value) return 0
+  const value = incitationAnalysis.value[key as keyof ArticleIncitationAnalysis]
+  return typeof value === 'number' ? value : 0
 }
 
 function truncateText(text: string, maxLength: number = 500): string {
@@ -188,7 +307,12 @@ async function loadArticle() {
   try {
     loading.value = true
     const articleId = parseInt(props.id)
+    
+    // 獲取文章基本資訊
     article.value = await getArticleById(articleId)
+    
+    // 獲取煽動指數分析（可能為 null）
+    incitationAnalysis.value = await getArticleIncitationAnalysis(articleId)
   } catch (error: any) {
     message.error(error.message || '載入文章詳情失敗')
   } finally {

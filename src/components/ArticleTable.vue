@@ -86,23 +86,6 @@ const columns: DataTableColumns<Article> = [
       const status = statusMap[row.status || 'PENDING'] || { type: 'default', text: row.status }
       return h(NTag, { type: status.type, size: 'small' }, { default: () => status.text })
     }
-  },
-  {
-    title: '立場分數',
-    key: 'stanceScore',
-    width: 120,
-    render: (row) => {
-      if (row.stanceScore === null || row.stanceScore === undefined) {
-        return h(NText, { depth: 3 }, { default: () => '-' })
-      }
-      const score = row.stanceScore
-      const color = score < -0.3 ? '#ff4d4f' : score > 0.3 ? '#1890ff' : '#8c8c8c'
-      return h(
-        NText,
-        { style: { color, fontWeight: '500' } },
-        { default: () => score.toFixed(2) }
-      )
-    }
   }
 ]
 
