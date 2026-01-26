@@ -71,12 +71,12 @@
 
           <!-- No Incitement Data Alert -->
           <n-alert v-else type="info" title="煽動指數數據">
-            此事件尚未進行煽動指數分析。
-            <template #footer>
+            <div>
+              <p>此事件尚未進行煽動指數分析。</p>
               <n-text depth="3">
                 您可以點擊「查看煽動指數分析」按鈕手動觸發分析。
               </n-text>
-            </template>
+            </div>
           </n-alert>
 
           <!-- Articles -->
@@ -101,8 +101,6 @@ import {
   NDescriptions,
   NDescriptionsItem,
   NAlert,
-  NGrid,
-  NGridItem,
   NText,
   useMessage
 } from 'naive-ui'

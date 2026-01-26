@@ -30,7 +30,8 @@ import { NLayout, NLayoutSider, NLayoutContent, NMenu, NIcon } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
 import {
   GitMergeOutline as MergeIcon,
-  SettingsOutline as SettingsIcon
+  SettingsOutline as SettingsIcon,
+  LayersOutline as LayersIcon
 } from '@vicons/ionicons5'
 
 const router = useRouter()
@@ -44,6 +45,11 @@ function renderIcon(icon: any) {
 }
 
 const menuOptions: MenuOption[] = [
+  {
+    label: '事件聚合管理',
+    key: 'AdminEventAggregation',
+    icon: renderIcon(LayersIcon)
+  },
   {
     label: '媒體字典管理',
     key: 'AdminMediaSources',

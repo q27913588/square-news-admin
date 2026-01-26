@@ -34,13 +34,13 @@
         </n-space>
       </n-card>
 
-      <!-- Semantic Search -->
-      <n-card title="語意搜尋">
+      <!-- Keyword Search -->
+      <n-card title="關鍵字搜尋">
         <n-space vertical>
           <n-input-group>
             <n-input
               v-model:value="searchQuery"
-              placeholder="輸入關鍵字進行語意搜尋"
+              placeholder="輸入關鍵字搜尋標題或摘要"
               @keyup.enter="handleSearch"
             />
             <n-button type="primary" :loading="searchLoading" @click="handleSearch">
@@ -50,8 +50,19 @@
 
           <div v-if="searchResults.length > 0">
             <n-divider />
-            <n-h3>搜尋結果</n-h3>
+            <n-h3>搜尋結果 (共 {{ searchTotalElements }} 篇)</n-h3>
             <ArticleTable :articles="searchResults" :loading="false" />
+            <n-pagination
+              v-model:page="searchCurrentPage"
+              v-model:page-size="searchPageSize"
+              :page-count="searchTotalPages"
+              :item-count="searchTotalElements"
+              show-size-picker
+              :page-sizes="[10, 20, 50, 100]"
+              style="margin-top: 16px; justify-content: flex-end"
+              @update:page="handleSearchPageChange"
+              @update:page-size="handleSearchPageSizeChange"
+            />
           </div>
         </n-space>
       </n-card>
@@ -124,6 +135,11 @@ const totalElements = ref(0)
 const searchQuery = ref('')
 const searchResults = ref<Article[]>([])
 const searchLoading = ref(false)
+const searchCurrentPage = ref(1)
+const searchPageSize = ref(20)
+const searchTotalPages = ref(0)
+const searchTotalElements = ref(0)
+const lastSearchQuery = ref('')
 
 async function loadSources() {
   try {
@@ -171,12 +187,54 @@ async function handleSearch() {
 
   try {
     searchLoading.value = true
-    searchResults.value = await searchArticles(searchQuery.value, 10)
+    lastSearchQuery.value = searchQuery.value
+    searchCurrentPage.value = 1
+    const response = await searchArticles(searchQuery.value, 0, searchPageSize.value)
+    searchResults.value = response.content
+    searchTotalPages.value = response.totalPages
+    searchTotalElements.value = response.totalElements
   } catch (error: any) {
     message.error(error.message || '搜尋失敗')
     searchResults.value = []
+    searchTotalPages.value = 0
+    searchTotalElements.value = 0
   } finally {
     searchLoading.value = false
+  }
+}
+
+async function handleSearchPageChange(page: number) {
+  if (!lastSearchQuery.value) return
+
+  try {
+    searchLoading.value = true
+    searchCurrentPage.value = page
+    const response = await searchArticles(lastSearchQuery.value, page - 1, searchPageSize.value)
+    searchResults.value = response.content
+    searchTotalPages.value = response.totalPages
+    searchTotalElements.value = response.totalElements
+  } catch (error: any) {
+    message.error(error.message || '搜尋失敗')
+  } finally {
+    searchLoading.value = false
+  }
+}
+
+async function handleSearchPageSizeChange(size: number) {
+  searchPageSize.value = size
+  searchCurrentPage.value = 1
+  if (lastSearchQuery.value) {
+    try {
+      searchLoading.value = true
+      const response = await searchArticles(lastSearchQuery.value, 0, size)
+      searchResults.value = response.content
+      searchTotalPages.value = response.totalPages
+      searchTotalElements.value = response.totalElements
+    } catch (error: any) {
+      message.error(error.message || '搜尋失敗')
+    } finally {
+      searchLoading.value = false
+    }
   }
 }
 

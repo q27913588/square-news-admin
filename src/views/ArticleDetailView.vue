@@ -155,6 +155,49 @@
                   {{ incitationAnalysis.version }}
                 </n-descriptions-item>
               </n-descriptions>
+
+              <!-- Evidence Fragments -->
+              <div v-if="evidenceFragments && evidenceFragments.length > 0">
+                <h3 style="margin-bottom: 16px;">🔍 分析證據片段</h3>
+                <n-collapse>
+                  <n-collapse-item title="查看詳細證據" name="evidence">
+                    <n-space vertical>
+                      <n-card
+                        v-for="(evidence, index) in evidenceFragments"
+                        :key="evidence.id"
+                        size="small"
+                        :title="`證據 ${index + 1}`"
+                      >
+                        <p style="white-space: pre-wrap; line-height: 1.6; color: #333;">
+                          {{ evidence.text }}
+                        </p>
+                        
+                        <!-- 分析原因 -->
+                        <n-alert v-if="evidence.notes" type="info" style="margin-top: 12px;" :bordered="false">
+                          <template #header>
+                            <span style="font-weight: 600;">💡 分析理由</span>
+                          </template>
+                          {{ evidence.notes }}
+                        </n-alert>
+                        
+                        <template #footer>
+                          <n-space>
+                            <n-tag size="small" :type="getAttributionTypeTag(evidence.attributionType)">
+                              {{ getAttributionTypeText(evidence.attributionType) }}
+                            </n-tag>
+                            <span v-if="evidence.targetsJson.length > 0" style="font-size: 12px; color: #666;">
+                              目標: {{ evidence.targetsJson.join(', ') }}
+                            </span>
+                            <span v-if="evidence.dimsJson && Object.keys(evidence.dimsJson).length > 0" style="font-size: 12px; color: #999;">
+                              維度: {{ Object.entries(evidence.dimsJson).map(([k, v]) => `${k}:${v}`).join(', ') }}
+                            </span>
+                          </n-space>
+                        </template>
+                      </n-card>
+                    </n-space>
+                  </n-collapse-item>
+                </n-collapse>
+              </div>
             </n-space>
           </n-card>
 
@@ -203,12 +246,15 @@ import {
   NA,
   NEmpty,
   NCollapseTransition,
+  NCollapse,
+  NCollapseItem,
+  NAlert,
   NProgress,
   NText,
   useMessage
 } from 'naive-ui'
-import { getArticleById, getArticleIncitationAnalysis } from '@/api/articles'
-import type { Article, ArticleIncitationAnalysis } from '@/types'
+import { getArticleById, getArticleIncitationAnalysis, getArticleIncitationEvidence } from '@/api/articles'
+import type { Article, ArticleIncitationAnalysis, ArticleIncitationEvidence } from '@/types'
 import { formatDisplay } from '@/utils/date'
 
 interface Props {
@@ -221,6 +267,7 @@ const message = useMessage()
 
 const article = ref<Article | null>(null)
 const incitationAnalysis = ref<ArticleIncitationAnalysis | null>(null)
+const evidenceFragments = ref<ArticleIncitationEvidence[]>([])
 const loading = ref(false)
 const showFullText = ref(false)
 
@@ -298,6 +345,24 @@ function getDimValue(key: string): number {
   return typeof value === 'number' ? value : 0
 }
 
+function getAttributionTypeTag(type: string): 'default' | 'error' | 'warning' | 'success' | 'primary' | 'info' {
+  const map: Record<string, 'default' | 'error' | 'warning' | 'success' | 'primary' | 'info'> = {
+    OUTLET_VOICE: 'error',      // 紅色 - 媒體自身聲音
+    QUOTED_SOURCE: 'warning',   // 橙色 - 引述消息來源
+    OPPONENT_QUOTE: 'info'      // 藍色 - 引述對手陣營
+  }
+  return map[type] || 'default'
+}
+
+function getAttributionTypeText(type: string): string {
+  const map: Record<string, string> = {
+    OUTLET_VOICE: '媒體論述',
+    QUOTED_SOURCE: '引述來源',
+    OPPONENT_QUOTE: '對手言論'
+  }
+  return map[type] || type
+}
+
 function truncateText(text: string, maxLength: number = 500): string {
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'
@@ -313,6 +378,16 @@ async function loadArticle() {
     
     // 獲取煽動指數分析（可能為 null）
     incitationAnalysis.value = await getArticleIncitationAnalysis(articleId)
+    
+    // 如果有煽動指數分析，則獲取證據片段
+    if (incitationAnalysis.value) {
+      try {
+        evidenceFragments.value = await getArticleIncitationEvidence(articleId)
+      } catch (error) {
+        console.warn('Failed to load evidence fragments:', error)
+        evidenceFragments.value = []
+      }
+    }
   } catch (error: any) {
     message.error(error.message || '載入文章詳情失敗')
   } finally {

@@ -13,9 +13,10 @@ export const publicApi: AxiosInstance = axios.create({
 })
 
 // Create admin API client (with API key authentication)
+// 超時時間設為 5 分鐘，因為重新聚合等操作採用同步處理，每篇文章需要數秒
 export const adminApi: AxiosInstance = axios.create({
   baseURL,
-  timeout: 30000,
+  timeout: 300000, // 5 分鐘
   headers: {
     'Content-Type': 'application/json'
   }

@@ -233,7 +233,7 @@ import {
   AlertCircleOutline,
   TimeOutline
 } from '@vicons/ionicons5'
-import client from '@/api/client'
+import { publicApi, adminApi } from '@/api/client'
 
 interface EventAnalysisStatus {
   eventId: number
@@ -249,7 +249,7 @@ interface EventAnalysisStatus {
 const message = useMessage()
 const loading = ref(false)
 const events = ref<EventAnalysisStatus[]>([])
-const filterStatus = ref<string | null>(null)
+const filterStatus = ref<string>('')
 const searchTopic = ref('')
 
 // Statistics
@@ -264,7 +264,7 @@ const stats = computed(() => {
 
 // Filter options
 const statusOptions = [
-  { label: '全部', value: null },
+  { label: '全部', value: '' },
   { label: '已分析', value: 'analyzed' },
   { label: '未分析', value: 'not-analyzed' },
   { label: '部分分析', value: 'partial' }
@@ -425,7 +425,7 @@ async function loadEvents() {
   loading.value = true
   try {
     // Fetch all events
-    const eventsRes = await client.get('/api/public/events', {
+    const eventsRes = await publicApi.get('/api/public/events', {
       params: { size: 1000 }
     })
     const allEvents = eventsRes.data.content || []
@@ -434,13 +434,13 @@ async function loadEvents() {
     const statusPromises = allEvents.map(async (event: any) => {
       try {
         // Get articles count
-        const articlesRes = await client.get(`/api/public/events/${event.eventId}/articles`, {
+        const articlesRes = await publicApi.get(`/api/public/events/${event.eventId}/articles`, {
           params: { size: 1 }
         })
         const articleCount = articlesRes.data.totalElements || 0
 
         // Get analyzed articles count
-        const analysisRes = await client.get(
+        const analysisRes = await publicApi.get(
           `/api/public/events/${event.eventId}/incitement`
         )
         const analyzedArticles = analysisRes.data?.statistics?.totalArticles || 0
@@ -507,7 +507,7 @@ async function handleAnalyze() {
 
   analyzing.value = true
   try {
-    const response = await client.post(
+    const response = await adminApi.post(
       `/admin/events/${currentEvent.value.eventId}/analyze-incitement`
     )
 
@@ -543,7 +543,7 @@ async function handleBatchAnalyze() {
 
   for (const event of eventsToAnalyze) {
     try {
-      await client.post(`/admin/events/${event.eventId}/analyze-incitement`)
+      await adminApi.post(`/admin/events/${event.eventId}/analyze-incitement`)
       batchProgress.value.success++
       message.success(`事件 #${event.eventId} 分析完成`)
     } catch (error: any) {

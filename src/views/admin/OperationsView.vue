@@ -232,7 +232,8 @@ async function searchNews() {
       return
     }
     searchLoading.value = true
-    searchResults.value = await searchArticles(query, 20)
+    const result = await searchArticles(query, 0, 20)
+    searchResults.value = result.content
     checkedRowKeys.value = []
   } catch (error: any) {
     message.error(error.message || '搜尋新聞失敗')

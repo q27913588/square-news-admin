@@ -93,3 +93,51 @@ export async function suggestEventDraft(payload: EventSuggestRequest): Promise<E
   const response = await adminApi.post<EventSuggestResponse>('/admin/events/suggest', payload)
   return response.data
 }
+
+/**
+ * Delete event (admin)
+ * Articles will be preserved but their event_id will be cleared
+ */
+export async function deleteEvent(eventId: number): Promise<{ eventId: number; message: string }> {
+  const response = await adminApi.delete<{ eventId: number; message: string }>(`/admin/events/${eventId}`)
+  return response.data
+}
+
+/**
+ * Dissolve event and reaggregate all articles (admin)
+ * The event will be deleted and all its articles will be reprocessed
+ */
+export async function dissolveEvent(eventId: number): Promise<{ eventId: number; reaggregated: number; message: string }> {
+  const response = await adminApi.post<{ eventId: number; reaggregated: number; message: string }>(`/admin/events/${eventId}/dissolve`)
+  return response.data
+}
+
+/**
+ * Add articles to event (admin)
+ */
+export async function addArticlesToEvent(eventId: number, articleIds: number[]): Promise<{ updated: number }> {
+  const response = await adminApi.post<{ updated: number }>(`/admin/events/${eventId}/articles`, { articleIds })
+  return response.data
+}
+
+/**
+ * Remove articles from event (admin)
+ */
+export async function removeArticlesFromEvent(eventId: number, articleIds: number[]): Promise<{ updated: number }> {
+  const response = await adminApi.delete<{ updated: number }>(`/admin/events/${eventId}/articles`, { data: { articleIds } })
+  return response.data
+}
+
+/**
+ * Recalculate event statistics (admin)
+ */
+export async function recalculateEvent(eventId: number): Promise<void> {
+  await adminApi.post(`/admin/events/${eventId}/recalculate`)
+}
+
+/**
+ * Regenerate event AI analysis (admin)
+ */
+export async function regenerateEvent(eventId: number): Promise<void> {
+  await adminApi.post(`/admin/events/${eventId}/regenerate`)
+}

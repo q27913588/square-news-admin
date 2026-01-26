@@ -143,11 +143,25 @@
                       :title="`證據 ${index + 1}`"
                     >
                       <p style="white-space: pre-wrap; line-height: 1.6;">{{ evidence.text }}</p>
+                      
+                      <!-- 分析原因 -->
+                      <n-alert v-if="evidence.notes" type="info" style="margin-top: 12px;" :bordered="false">
+                        <template #header>
+                          <span style="font-weight: 600;">💡 分析理由</span>
+                        </template>
+                        {{ evidence.notes }}
+                      </n-alert>
+                      
                       <template #footer>
                         <n-space>
-                          <n-tag size="small">{{ evidence.attributionType }}</n-tag>
-                          <span style="font-size: 12px; color: #666;">
+                          <n-tag size="small" :type="getAttributionTypeTag(evidence.attributionType)">
+                            {{ getAttributionTypeText(evidence.attributionType) }}
+                          </n-tag>
+                          <span v-if="evidence.targetsJson.length > 0" style="font-size: 12px; color: #666;">
                             目標: {{ evidence.targetsJson.join(', ') }}
+                          </span>
+                          <span v-if="evidence.dimsJson && Object.keys(evidence.dimsJson).length > 0" style="font-size: 12px; color: #999;">
+                            維度: {{ Object.entries(evidence.dimsJson).map(([k, v]) => `${k}:${v}`).join(', ') }}
                           </span>
                         </n-space>
                       </template>
@@ -182,6 +196,7 @@ import {
   NDescriptions,
   NDescriptionsItem,
   NTag,
+  NAlert,
   NEmpty,
   NText,
   useMessage,
@@ -337,6 +352,24 @@ function getStanceLabel(polarity: number): string {
   if (polarity < -0.5) return '親中/疑美'
   if (polarity < -0.2) return '偏向親中'
   return '中立'
+}
+
+function getAttributionTypeTag(type: string): 'default' | 'error' | 'warning' | 'success' | 'primary' | 'info' {
+  const map: Record<string, 'default' | 'error' | 'warning' | 'success' | 'primary' | 'info'> = {
+    OUTLET_VOICE: 'error',      // 紅色 - 媒體自身聲音
+    QUOTED_SOURCE: 'warning',   // 橙色 - 引述消息來源
+    OPPONENT_QUOTE: 'info'      // 藍色 - 引述對手陣營
+  }
+  return map[type] || 'default'
+}
+
+function getAttributionTypeText(type: string): string {
+  const map: Record<string, string> = {
+    OUTLET_VOICE: '媒體論述',
+    QUOTED_SOURCE: '引述來源',
+    OPPONENT_QUOTE: '對手言論'
+  }
+  return map[type] || type
 }
 
 async function loadData() {

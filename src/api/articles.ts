@@ -1,4 +1,4 @@
-import { publicApi } from './client'
+import { publicApi, adminApi } from './client'
 import type { Article, Page, GetArticlesParams, ArticleIncitationAnalysis, ArticleIncitationEvidence } from '@/types'
 
 /**
@@ -28,13 +28,14 @@ export async function getArticleById(id: number): Promise<Article> {
 }
 
 /**
- * Search articles by semantic query
- * @param q Search query
- * @param limit Number of results (default: 10)
+ * Search articles by keyword (searches title and summary)
+ * @param q Search keyword
+ * @param page Page number (0-based)
+ * @param size Page size
  */
-export async function searchArticles(q: string, limit: number = 10): Promise<Article[]> {
-  const response = await publicApi.get<Article[]>('/articles/search', {
-    params: { q, limit }
+export async function searchArticles(q: string, page: number = 0, size: number = 20): Promise<Page<Article>> {
+  const response = await publicApi.get<Page<Article>>('/articles/search', {
+    params: { q, page, size }
   })
   return response.data
 }
@@ -68,5 +69,17 @@ export async function getArticleIncitationEvidence(
   articleId: number
 ): Promise<ArticleIncitationEvidence[]> {
   const response = await publicApi.get<ArticleIncitationEvidence[]>(`/articles/${articleId}/incitation/evidence`)
+  return response.data
+}
+
+/**
+ * Batch reaggregate articles (admin)
+ * @param articleIds Array of article IDs to reaggregate
+ * @returns Number of processed articles
+ */
+export async function batchReaggregateArticles(
+  articleIds: number[]
+): Promise<{ processed: number; message: string }> {
+  const response = await adminApi.post<{ processed: number; message: string }>('/admin/articles/batch-reaggregate', { articleIds })
   return response.data
 }

@@ -68,6 +68,12 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminOperations',
         component: () => import('@/views/admin/OperationsView.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'event-aggregation',
+        name: 'AdminEventAggregation',
+        component: () => import('@/views/admin/EventAggregationView.vue'),
+        meta: { requiresAuth: true, title: '事件聚合管理' }
       }
     ]
   }
