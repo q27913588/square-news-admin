@@ -8,11 +8,13 @@ export async function getEvents(
   page: number = 0,
   size: number = 20,
   topic?: string,
-  state?: string
+  state?: string,
+  published?: boolean
 ): Promise<Page<Event>> {
   const params: any = { page, size, sort: 'updatedAt,desc' }
   if (topic) params.topic = topic
   if (state) params.state = state
+  if (published !== undefined) params.published = published
 
   const response = await publicApi.get<Page<Event>>('/events', { params })
   return response.data
@@ -140,4 +142,28 @@ export async function recalculateEvent(eventId: number): Promise<void> {
  */
 export async function regenerateEvent(eventId: number): Promise<void> {
   await adminApi.post(`/admin/events/${eventId}/regenerate`)
+}
+
+/**
+ * Publish or unpublish an event (admin)
+ * @param eventId Event ID
+ * @param publish true to publish, false to unpublish
+ */
+export async function publishEvent(eventId: number, publish: boolean): Promise<Event> {
+  const response = await adminApi.post<Event>(`/admin/events/${eventId}/publish`, null, {
+    params: { publish }
+  })
+  return response.data
+}
+
+/**
+ * Set or unset event as headline (admin)
+ * @param eventId Event ID
+ * @param headline true to set as headline, false to remove
+ */
+export async function setEventHeadline(eventId: number, headline: boolean): Promise<Event> {
+  const response = await adminApi.post<Event>(`/admin/events/${eventId}/headline`, null, {
+    params: { headline }
+  })
+  return response.data
 }

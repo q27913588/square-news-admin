@@ -18,6 +18,10 @@ export interface Event {
   keyPoints?: string[]
   blindspotLabel?: string
   locationTag?: string
+  published?: boolean
+  headline?: boolean
+  publishedAt?: string
+  imageUrl?: string
 }
 
 export interface EventCreateRequest {
