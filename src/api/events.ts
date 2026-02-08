@@ -150,8 +150,8 @@ export async function regenerateEvent(eventId: number): Promise<void> {
  * @param publish true to publish, false to unpublish
  */
 export async function publishEvent(eventId: number, publish: boolean): Promise<Event> {
-  const response = await adminApi.post<Event>(`/admin/events/${eventId}/publish`, null, {
-    params: { publish }
+  const response = await adminApi.post<Event>(`/admin/events/${eventId}/publish`, {
+    published: publish
   })
   return response.data
 }
@@ -162,8 +162,8 @@ export async function publishEvent(eventId: number, publish: boolean): Promise<E
  * @param headline true to set as headline, false to remove
  */
 export async function setEventHeadline(eventId: number, headline: boolean): Promise<Event> {
-  const response = await adminApi.post<Event>(`/admin/events/${eventId}/headline`, null, {
-    params: { headline }
+  const response = await adminApi.post<Event>(`/admin/events/${eventId}/headline`, {
+    headline
   })
   return response.data
 }

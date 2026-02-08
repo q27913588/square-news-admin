@@ -62,6 +62,7 @@ export interface MediaSource {
   updatedAt?: string
   factuality?: 'HIGH' | 'MIXED' | 'LOW' | 'UNKNOWN' | string
   ownershipInfo?: string
+  category?: 'TRADITIONAL' | 'ONLINE' | 'INDEPENDENT' | 'OTHER' | string
 }
 
 export interface Article {
